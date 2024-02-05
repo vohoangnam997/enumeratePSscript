@@ -9,10 +9,11 @@ Write-Host "		4. Scanning for Open Ports" -ForegroundColor Yellow
 Write-Host "		5. Enumerating Domain Users" -ForegroundColor Yellow
 Write-Host "		6. Enumerate AV software using wmic" -ForegroundColor Yellow
 Write-Host "		7. Domain?" -ForegroundColor Yellow
+Write-Host "		8. Query Domain Controllers" -ForegroundColor Yellow
 Write-Host ""
 
 # Get user input
-$choice = Read-Host "Enter the option number (1, 2, 3, 4, 5)"
+$choice = Read-Host "Enter the option number (1, 2, 3, 4, 5, 6, 7, 8)"
 
 # Validate user input
 if ($choice -eq "1") {
@@ -32,8 +33,18 @@ elseif ($choice -eq "4") {
     1..1024 | ForEach-Object { $sock = New-Object System.Net.Sockets.TcpClient; $async =$sock.BeginConnect('localhost', $_, $null, $null); $wait = $async.AsyncWaitHandle.WaitOne(100, $false);if($sock.Connected) { $_ } ; $sock.Close() }
 }
 elseif ($choice -eq "5") {
-    # Execute option 5 to retrieves a list of all domain users, including their names, account status, and last logon dates.
-    Get-ADUser -Filter * -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+    # Option 5: Prompt to select enabled or disabled users
+    $isEnabled = Read-Host "Enter 'True' to see enabled users, 'False' to see disabled users"
+
+    if ($isEnabled -eq "True") {
+        Get-ADUser -Filter {Enabled -eq $true} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+    }
+    elseif ($isEnabled -eq "False") {
+        Get-ADUser -Filter {Enabled -eq $false} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+    }
+    else {
+        Write-Host "Invalid option. Please enter 'True' or 'False'" -ForegroundColor Red
+    }
 }
 elseif ($choice -eq "6") {
     # Enumerate AV software using Windows built-in tools, such as wmic (Windows servers may not have SecurityCenter2 namespace, which may not work on the attached VM. Instead, it works for Windows workstations!)
@@ -43,6 +54,10 @@ elseif ($choice -eq "7") {
     # Check whether the Windows machine is part of the AD environment
     systeminfo | findstr Domain
 }
+elseif ($choice -eq "8") {
+    # Query domain controllers using nslookup
+    nslookup -type=all _ldap._tcp.dc._msdcs.$env:USERDNSDOMAIN
+}
 else {
-    Write-Host "Invalid option. Please enter 1, 2, 3, 4, 5, 6, 7"
+    Write-Host "Invalid option. Please enter 1, 2, 3, 4, 5, 6, 7, 8"
 }
