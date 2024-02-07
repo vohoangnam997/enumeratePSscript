@@ -36,11 +36,25 @@ elseif ($choice -eq "5") {
     # Option 5: Prompt to select enabled or disabled users
     $isEnabled = Read-Host "Enter 'True' to see enabled users, 'False' to see disabled users"
 
-    if ($isEnabled -eq "True") {
-        Get-ADUser -Filter {Enabled -eq $true} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
-    }
-    elseif ($isEnabled -eq "False") {
-        Get-ADUser -Filter {Enabled -eq $false} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+    if ($isEnabled -eq "True" -or $isEnabled -eq "False") {
+        # Prompt to enter the date
+        $sinceDate = Read-Host "Enter the date (MM/dd/yyyy) since which you want to retrieve user information"
+
+        if ($sinceDate -as [DateTime]) {
+            $sinceDate = Get-Date $sinceDate
+
+            if ($isEnabled -eq "True") {
+                # Retrieve enabled users with LastLogonDate since the specified date
+                Get-ADUser -Filter {Enabled -eq $true -and LastLogonDate -ge $sinceDate} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+            }
+            elseif ($isEnabled -eq "False") {
+                # Retrieve disabled users with LastLogonDate since the specified date
+                Get-ADUser -Filter {Enabled -eq $false -and LastLogonDate -ge $sinceDate} -Properties * | Select-Object -Property Name, Enabled, LastLogonDate
+            }
+        }
+        else {
+            Write-Host "Invalid date format. Please enter the date in MM/dd/yyyy format." -ForegroundColor Red
+        }
     }
     else {
         Write-Host "Invalid option. Please enter 'True' or 'False'" -ForegroundColor Red
